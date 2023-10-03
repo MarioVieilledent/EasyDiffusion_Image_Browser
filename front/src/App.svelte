@@ -1,8 +1,8 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    const SAVED_QUERY = 'savedQuery';
 
   let loading = true;
-  const firstPrompt = 'peder mork monsted';
 
   const buildUrl = (prompt: string) =>
     `http://localhost:3000/ai?q=${encodeURI(prompt)}`;
@@ -10,10 +10,12 @@
 
   let images: Image[] = [];
 
-  let input = firstPrompt;
+  let input = '';
 
   function load(event: any): void {
     if (event.key === "Enter") {
+      window.localStorage.setItem(SAVED_QUERY, input);
+
       fetch(buildUrl(input)).then((res) =>
         res.json().then((data) => {
           images = data;
@@ -24,7 +26,11 @@
   }
 
   onMount(() => {
-    load({key: 'Enter'});
+    const savedQueryLS = window.localStorage.getItem(SAVED_QUERY);
+    if (savedQueryLS) {
+      input = savedQueryLS;
+      load({key: 'Enter'});
+    }
   });
 
   type Image = {

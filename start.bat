@@ -1,3 +1,5 @@
-START node server.js
+@echo off
+start cmd /k "npm install && node server.js"
+
 cd front
-npm run dev
+start cmd /k "npm install && npm run dev"

@@ -5,6 +5,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const path = "../"
+const MAX_IMAGES_SENT = 1000;
 
 let database = buildImagesAndDescriptions();
 
@@ -20,15 +21,18 @@ app.get('/ai', (req, res) => {
 
   const words = queryParam.trim().toLowerCase().split(' ');
 
-  const result = shuffle(database.filter(e => (
+  let result = shuffle(database.filter(e =>
     words.every(word => e.description?.prompt?.trim().toLowerCase().includes(word))
-  )));
+  ));
+
+  // Limit the number of images sent to clients
+  result = result.slice(0, MAX_IMAGES_SENT);
 
   res.json(result);
 });
 
 app.listen(PORT, () => {
-  console.log(`Server is running: http://localhost:${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
 
 
