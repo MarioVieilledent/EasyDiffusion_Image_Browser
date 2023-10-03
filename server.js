@@ -9,10 +9,13 @@ const MAX_IMAGES_SENT = 1000;
 
 let database = buildImagesAndDescriptions();
 
-app.use(cors());
+app.use(cors()); // Allow cors for any webapp
 
-app.use(express.static(path));
+app.use('/webapp', express.static('./front/dist')); // Serve webapp
+app.use('/assets/', express.static('./front/dist/assets')); // Redirect webapp requests
+app.use('/', express.static(path)); // Serve all files
 
+// Query for searching images
 app.get('/ai', (req, res) => {
   const queryParam = req.query.q;
   if (!queryParam) {
@@ -31,8 +34,8 @@ app.get('/ai', (req, res) => {
   res.json(result);
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is running on port ${PORT}\nWebapp accessible here => http://localhost:3000/webapp/`);
 });
 
 

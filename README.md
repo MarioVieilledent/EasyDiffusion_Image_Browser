@@ -13,10 +13,10 @@ Browse and view all images generated and stored by Easy Diffusion
 
 - Place this repo inside the destination repository of EasyDiffusion (Easy Diffusion > Settings tab > 
 `Save Location` path)
-- Start server and client either with bat file (windows), either with running `node server.js` server and `cd front && npm run dev` client
-- Open client and browse pictures
+- Start server and client either with `start.bat` file (windows), else, process all the commands in the batch file
+- Open [client](http://localhost:3000/webapp/) and browse pictures
 
-## Client brower
+## Client preview
 
 ![preview](preview.png)
 
