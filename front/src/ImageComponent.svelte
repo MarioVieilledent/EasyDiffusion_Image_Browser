@@ -3,7 +3,7 @@
 
     export let image: Image;
 
-    const buildImgUrl = (id: string) => `http://localhost:3000/${id}`;
+    const buildImgUrl = (id: string) => window.location.hostname === 'localhost' ? `http://localhost:3000/${id}` : `http://${window.location.hostname}:3000/${id}`;
 </script>
 
 <div class="row-info">

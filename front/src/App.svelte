@@ -7,8 +7,7 @@
 
   let loading = true;
 
-  const buildUrl = (prompt: string) =>
-    `http://localhost:3000/ai?q=${encodeURI(prompt)}`;
+  const buildUrl = (prompt: string) =>  window.location.hostname === 'localhost' ? `http://localhost:3000/ai?q=${encodeURI(prompt)}` : `http://${window.location.hostname}:3000/ai?q=${encodeURI(prompt)}`;
 
   let images: Image[] = [];
 
