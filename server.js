@@ -24,9 +24,15 @@ app.get('/ai', (req, res) => {
 
   const words = queryParam.trim().toLowerCase().split(' ');
 
-  let result = shuffle(database.filter(e =>
-    words.every(word => e.description?.prompt?.trim().toLowerCase().includes(word))
-  ));
+  // Filtering database to keep only requested images
+  // Find patterns in prompt and in filename (id)
+  let result = database.filter(e =>
+    words.every(word => e.description?.prompt?.trim().toLowerCase().includes(word) ||
+      e.id.trim().replaceAll('_', ' ').replaceAll('\\', ' ').replaceAll('/', ' ').toLowerCase().includes(word))
+  );
+
+  // Shuffling images
+  result = shuffle(result);
 
   // Limit the number of images sent to clients
   result = result.slice(0, MAX_IMAGES_SENT);
@@ -38,8 +44,59 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}\nWebapp accessible here => http://localhost:3000/webapp/`);
 });
 
+/**
+ * Find all files, images, txt and json metadata
+ * Bind images and their metadata
+ */
+function buildImagesAndDescriptions() {
+  let database = [];
 
-// Recursive function to get files
+  const files = getFiles(path); // All files
+  const jsons = files.filter(e => e.endsWith('.json')); // All json files
+  const txts = files.filter(e => e.endsWith('.txt')); // All txt files
+  const jpegs = files.filter(e => e.endsWith('.jpeg')); // All image files
+
+  // Find pairs (iterate over each image and try to find their json, txt or embeded metadata)
+  jpegs.forEach(imgPath => {
+    const id = imgPath.slice(0, -5);
+    const indexJson = jsons.findIndex(e => e.includes(id + '.json'));
+
+    // If image has a json metadata
+    if (indexJson >= 0) {
+      const description = JSON.parse(fs.readFileSync(jsons[indexJson]));
+      database.push({
+        id,
+        imgPath,
+        description,
+      });
+    } else {
+      const indexTxt = txts.findIndex(e => e.includes(id + '.txt'));
+
+      // Else if image has txt metadata
+      if (indexTxt >= 0) {
+        const description = parseTxt(fs.readFileSync(txts[indexTxt]));
+        database.push({
+          id,
+          imgPath,
+          description,
+        });
+      } else {
+        
+        // Else
+        database.push({
+          id,
+          imgPath,
+        });
+      }
+    }
+  });
+
+  return database;
+}
+
+/**
+ * Recursive function to get all files in any depth
+ */
 function getFiles(dir, files = []) {
   const fileList = fs.readdirSync(dir);
   for (const file of fileList) {
@@ -53,38 +110,53 @@ function getFiles(dir, files = []) {
   return files;
 }
 
-
-function buildImagesAndDescriptions() {
-  let database = [];
-
-  const files = getFiles(path);
-  const jsons = files.filter(e => e.endsWith('.json'));
-  const jpegs = files.filter(e => e.endsWith('.jpeg'));
-  const others = files.filter(e => (!e.endsWith('.jpeg') && !e.endsWith('.json')));
-
-  // Find pairs
-  jpegs.forEach(imgPath => {
-    const id = imgPath.slice(0, -5);
-    const index = jsons.findIndex(e => e.includes(id + '.json'));
-
-    if (index >= 0) {
-      const description = JSON.parse(fs.readFileSync(jsons[index]));
-      database.push({
-        id,
-        imgPath,
-        description,
-      });
-    } else {
-      database.push({
-        id,
-        imgPath,
-      });
+/**
+ * If metadata is stored in txt instead of json, parse txt
+ */
+function parseTxt(buffer) {
+  let desc = {};
+  const txt = buffer.toString('utf8');
+  console.log(txt);
+  const lines = txt.split('\n');
+  lines.forEach(line => {
+    // Regex to extract elements from txt
+    const matches = /^(.*?):\ (.*)/g.exec(line)
+    if (matches) {
+      let key = matches[1].toLowerCase().replaceAll(' ', '_');
+      // Modify certain keywords that doesn't fit json keywords
+      key === 'stable_diffusion_model' ? key = 'use_stable_diffusion_model' : {};
+      key === 'controlnet_model' ? key = 'use_controlnet_model' : {};
+      key === 'vae_model' ? key = 'use_vae_model' : {};
+      key === 'sampler' ? key = 'sampler_name' : {};
+      key === 'steps' ? key = 'num_inference_steps' : {};
+      key === 'sampler' ? key = 'sampler_name' : {};
+      key === 'lora_model' ? key = 'use_lora_model' : {};
+      key === 'embedding_models:' ? key = 'use_embeddings_model' : {};
+      key === 'seamless_tiling' ? key = 'tiling' : {};
+      key === 'use_upscaling' ? key = 'use_upscale' : {};
+      key === 'upscale_by' ? key = 'upscale_amount' : {};
+      const value = matches[2];
+      const numValue = Number(value);
+      if (value === "None") {
+        desc[key] = null;
+      } else if (value === "True") {
+        desc[key] = true;
+      } else if (value === "False") {
+        desc[key] = false;
+      } else if (isNaN(numValue)) {
+        desc[key] = value;
+      } else {
+        desc[key] = numValue;
+      }
     }
   });
-
-  return database;
+  console.log(desc);
+  return desc;
 }
 
+/**
+ * Shuffles an array
+ */
 function shuffle(array) {
   let currentIndex = array.length, randomIndex;
 

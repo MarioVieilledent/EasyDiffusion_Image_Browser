@@ -7,7 +7,7 @@ Browse and view all images generated and stored by Easy Diffusion
 - Need [EasyDiffusion](https://easydiffusion.github.io/) installed to generate images
 - Easy Diffusion > settings
   - Need to activate `Auto-Save Images`
-  - Need to set `Metadata format` to `json` *very important, no other format supper yet*
+  - Need to set `Metadata format` to `txt`, `json`, `embeded & txt` or `embeded & json`, *yet, does not support embeded format*
 
 ## Use
 
@@ -26,7 +26,7 @@ The node.js server `server.js` list all images in jpeg format and metada in json
 
 ## To do
 
-- Accept all other metadata formats
+- Accept image embeded metadata formats
 - More filter for browsing images
   - Select model
   - Select samplers

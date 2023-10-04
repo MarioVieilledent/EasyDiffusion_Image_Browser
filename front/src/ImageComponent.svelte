@@ -3,32 +3,41 @@
 
     export let image: Image;
 
-    const buildImgUrl = (id: string) => window.location.hostname === 'localhost' ? `http://localhost:3000/${id}` : `http://${window.location.hostname}:3000/${id}`;
+    const buildImgUrl = (id: string) =>
+        window.location.hostname === "localhost"
+            ? `http://localhost:3000/${id}`
+            : `http://${window.location.hostname}:3000/${id}`;
 </script>
 
 <div class="row-info">
-    <span class="prompt">{image.description.prompt}</span>
-    <span class="details">
-        <span class="details-title">Seed:</span>
-        <span class="details-value">{image.description.seed}</span>
-        <span class="details-title">Dimensions:</span>
-        <span class="details-value"
-            >{image.description.width}x{image.description.height}</span
-        >
-        <span class="details-title">Sampler:</span>
-        <span class="details-value">{image.description.sampler_name}</span>
-        <span class="details-title">Inference Steps:</span>
-        <span class="details-value"
-            >{image.description.num_inference_steps}</span
-        >
-        <span class="details-title">Guidance Scale:</span>
-        <span class="details-value">{image.description.guidance_scale}</span>
-        <span class="details-title">Model:</span>
-        <span class="details-value"
-            >{image.description.use_stable_diffusion_model}</span
-        >
-    </span>
-    <span class="negative-prompt">{image.description.negative_prompt}</span>
+    {#if image.description}
+        <span class="prompt">{image.description.prompt}</span>
+        <span class="details">
+            <span class="details-title">Seed:</span>
+            <span class="details-value">{image.description.seed}</span>
+            <span class="details-title">Dimensions:</span>
+            <span class="details-value"
+                >{image.description.width}x{image.description.height}</span
+            >
+            <span class="details-title">Sampler:</span>
+            <span class="details-value">{image.description.sampler_name}</span>
+            <span class="details-title">Inference Steps:</span>
+            <span class="details-value"
+                >{image.description.num_inference_steps}</span
+            >
+            <span class="details-title">Guidance Scale:</span>
+            <span class="details-value">{image.description.guidance_scale}</span
+            >
+            <span class="details-title">Model:</span>
+            <span class="details-value"
+                >{image.description.use_stable_diffusion_model}</span
+            >
+        </span>
+        <span class="negative-prompt">{image.description.negative_prompt}</span>
+    {:else}
+        <span class="prompt">{image.id}</span>
+        <span class="negative-prompt">no metadata</span>
+    {/if}
 </div>
 <img class="image" src={buildImgUrl(image.imgPath)} alt={image.id} />
 
@@ -66,8 +75,8 @@
         }
     }
 
-.image {
-    width: 100%;
-    max-width: 1000px;
-}
+    .image {
+        width: 100%;
+        max-width: 1000px;
+    }
 </style>
