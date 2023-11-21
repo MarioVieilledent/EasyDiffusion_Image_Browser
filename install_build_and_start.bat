@@ -1,0 +1,1 @@
+npm install && cd front && npm install && npm run build && cd .. && node server.js
