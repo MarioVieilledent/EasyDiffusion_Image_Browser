@@ -5,46 +5,132 @@
 
   const SAVED_QUERY = "savedQuery";
 
-  let loading = true;
-
-  const buildUrl = (prompt: string) =>  window.location.hostname === 'localhost' ? `http://localhost:3000/ai?q=${encodeURI(prompt)}` : `http://${window.location.hostname}:3000/ai?q=${encodeURI(prompt)}`;
+  let fetchState: "ok" | "loading" | "error" | "notStarted" = "notStarted";
 
   let images: Image[] = [];
+  let models: string[] = [];
 
   let input = "";
+  let modelFilter: string[] = [];
 
-  function load(event: any): void {
-    if (event.key === "Enter") {
-      window.localStorage.setItem(SAVED_QUERY, input);
+  let debounceTimeout: any;
 
-      fetch(buildUrl(input)).then((res) =>
-        res.json().then((data) => {
-          images = data;
-          loading = false;
-        })
-      );
+  const buildUrl = (prompt: string) =>
+    window.location.hostname === "localhost"
+      ? `http://localhost:3000/ai?q=${encodeURI(prompt)}`
+      : `http://${window.location.hostname}:3000/ai?q=${encodeURI(prompt)}`;
+
+  const debounce = (func: any, delay: number) => {
+    clearTimeout(debounceTimeout);
+    debounceTimeout = setTimeout(() => {
+      func();
+    }, delay);
+  };
+
+  const handleInputChange = (event: any) => {
+    const query = event.target.value;
+    if (query === "") {
+      fetchState = "notStarted";
+    } else {
+      fetchState = "loading";
+      load(query);
     }
+  };
+
+  function load(query: string): void {
+    fetchState = "loading";
+
+    window.localStorage.setItem(SAVED_QUERY, query);
+
+    debounce(() => {
+      fetch(buildUrl(query)).then((res) =>
+        res
+          .json()
+          .then((data: Image[]) => {
+            // Store all images
+            images = data;
+            // Retrieve all models
+            models = data.reduce((acc: string[], image: Image) => {
+              const model = image.description.use_stable_diffusion_model;
+              return acc.includes(model) ? acc : [...acc, model];
+            }, []);
+            modelFilter = models;
+            fetchState = "ok";
+          })
+          .catch((e) => {
+            fetchState = "error";
+            console.warn("Can't fetch from server.");
+            console.warn(e);
+          })
+      );
+    }, 300);
   }
 
   onMount(() => {
     const savedQueryLS = window.localStorage.getItem(SAVED_QUERY);
     if (savedQueryLS) {
       input = savedQueryLS;
-      load({ key: "Enter" });
+      load(savedQueryLS);
     }
   });
 </script>
 
 <div class="container">
   <div class="header">
-    <input type="text" bind:value={input} on:keyup={(event) => load(event)} />
+    <input type="text" bind:value={input} on:keyup={handleInputChange} />
   </div>
-  <div class="images">
-    {#if !loading}
-      {#each images as image}
-        <ImageComponent {image} />
+  <div class="content">
+    <div class="left-panel">
+      <span>Filter models</span>
+      {#each models as model}
+        <button
+          on:click={() => {
+            if (modelFilter.includes(model)) {
+              modelFilter = modelFilter.filter((m) => m !== model);
+            } else {
+              modelFilter = [...modelFilter, model];
+            }
+          }}
+          class={modelFilter.includes(model) ? "selected" : "unselected"}
+        >
+          <span>{model}</span>
+        </button>
       {/each}
-    {/if}
+      <button
+        on:click={() => (modelFilter = models)}
+        class={modelFilter.length === models.length ? "selected" : "unselected"}
+        >All</button
+      >
+      <button
+        on:click={() => (modelFilter = [])}
+        class={modelFilter.length === 0 ? "selected" : "unselected"}
+        >None</button
+      >
+    </div>
+    <div class="images">
+      {#if fetchState === "ok"}
+        {#if images.length === 0}
+          <p>No image matching the query filter.</p>
+        {/if}
+        {#each images as image}
+          {#if modelFilter.includes(image.description.use_stable_diffusion_model)}
+            <ImageComponent {image} />
+          {/if}
+        {/each}
+      {/if}
+
+      {#if fetchState === "loading"}
+        <p>Loading...</p>
+      {/if}
+
+      {#if fetchState === "notStarted"}
+        <p>Please enter a prompt</p>
+      {/if}
+
+      {#if fetchState === "error"}
+        <p>Something went wrong, open console for more details.</p>
+      {/if}
+    </div>
   </div>
 </div>
 
@@ -62,6 +148,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 12px;
 
       input {
         background-color: #343a40;
@@ -73,14 +160,35 @@
       }
     }
 
-    .images {
+    .content {
+      display: flex;
       width: 100%;
       height: calc(100% - 50px);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      overflow-y: auto;
-      background-color: #333333;
+
+      .left-panel {
+        width: 200px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        gap: 12px;
+        padding: 12px;
+        background-color: #222222;
+
+        button {
+          word-wrap: break-word;
+        }
+      }
+
+      .images {
+        width: calc(100% - 200px);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow-y: auto;
+        background-color: #333333;
+      }
     }
   }
 </style>
