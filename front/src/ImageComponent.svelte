@@ -73,15 +73,19 @@
             }
 
             .copy-prompt-button {
-                background-color: none !important;
-                margin: 0;
-                padding: 3px;
+                background-color: transparent;
+                margin: 0px 0px 0px 6px;
+                padding: 0;
                 border: none;
                 border-radius: 0px;
 
                 svg {
                     height: 18px;
                 }
+            }
+
+            .copy-prompt-button:focus {
+                outline: 0;
             }
 
             .copy-prompt:hover {
