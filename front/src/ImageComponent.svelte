@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Image } from "./types";
+  import type { Image, ImageRate } from "./types";
 
   export let image: Image;
 
@@ -7,6 +7,30 @@
     window.location.hostname === "localhost"
       ? `http://localhost:3000/${id}`
       : `http://${window.location.hostname}:3000/${id}`;
+
+  const buildRateUrl = () =>
+    window.location.hostname === "localhost"
+      ? `http://localhost:3000/rate`
+      : `http://${window.location.hostname}:3000/rate`;
+
+  const rate = (data: ImageRate) => {
+    fetch(buildRateUrl(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("ok");
+        console.log(data);
+      })
+      .catch((error) => {
+        console.error("Error rating image:");
+        console.error(error);
+      });
+  };
 </script>
 
 <div class="row-info">
@@ -45,6 +69,21 @@
       >
     </span>
     <span class="negative-prompt">{image.description.negative_prompt}</span>
+    <div>
+      {#if image.starred}
+        <button
+          on:click={() => {
+            rate({ id: image.id, rate: 0, starred: false });
+          }}>UNSTAR</button
+        >
+      {:else}
+        <button
+          on:click={() => {
+            rate({ id: image.id, rate: 0, starred: true });
+          }}>STAR</button
+        >
+      {/if}
+    </div>
   {:else}
     <span class="prompt">{image.id}</span>
     <span class="negative-prompt">no metadata</span>

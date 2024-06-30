@@ -11,7 +11,9 @@
   let models: string[] = [];
 
   let input = "";
+
   let modelFilter: string[] = [];
+  let starredFilter: boolean = false;
 
   let debounceTimeout: any;
 
@@ -51,8 +53,12 @@
             images = data;
             // Retrieve all models
             models = data.reduce((acc: string[], image: Image) => {
-              const model = image.description.use_stable_diffusion_model;
-              return acc.includes(model) ? acc : [...acc, model];
+              if (image.description?.use_stable_diffusion_model) {
+                const model = image.description.use_stable_diffusion_model;
+                return acc.includes(model) ? acc : [...acc, model];
+              } else {
+                return acc;
+              }
             }, []);
             modelFilter = models;
             fetchState = "ok";
@@ -78,11 +84,19 @@
 <div class="container">
   <div class="header">
     <input type="text" bind:value={input} on:keyup={handleInputChange} />
+    <span
+      >{`${images.filter((image) => ((starredFilter && image.starred) || !starredFilter) && image.description?.use_stable_diffusion_model && modelFilter.includes(image.description.use_stable_diffusion_model)).length}/${images.length}`}</span
+    >
   </div>
   <div class="content">
     <div class="left-panel">
       <span>Filter models</span>
       {#each models as model}
+        {@const nbOfImageOfThisModel = images.filter(
+          (image) =>
+            image.description?.use_stable_diffusion_model &&
+            model === image.description.use_stable_diffusion_model
+        ).length}
         <button
           on:click={() => {
             if (modelFilter.includes(model)) {
@@ -93,9 +107,10 @@
           }}
           class={modelFilter.includes(model) ? "selected" : "unselected"}
         >
-          <span>{model}</span>
+          <span>{`${model} (${nbOfImageOfThisModel})`}</span>
         </button>
       {/each}
+
       <button
         on:click={() => (modelFilter = models)}
         class={modelFilter.length === models.length ? "selected" : "unselected"}
@@ -106,6 +121,14 @@
         class={modelFilter.length === 0 ? "selected" : "unselected"}
         >None</button
       >
+
+      {#if starredFilter}
+        <button on:click={() => (starredFilter = false)}
+          >Starred and unstarred</button
+        >
+      {:else}
+        <button on:click={() => (starredFilter = true)}>Only Starred</button>
+      {/if}
     </div>
     <div class="images">
       {#if fetchState === "ok"}
@@ -113,7 +136,7 @@
           <p>No image matching the query filter.</p>
         {/if}
         {#each images as image}
-          {#if modelFilter.includes(image.description.use_stable_diffusion_model)}
+          {#if ((starredFilter && image.starred) || !starredFilter) && modelFilter.includes(image.description?.use_stable_diffusion_model)}
             <ImageComponent {image} />
           {/if}
         {/each}

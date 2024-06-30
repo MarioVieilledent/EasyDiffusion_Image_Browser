@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const bodyParser = require('body-parser')
 const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,11 +10,41 @@ const MAX_IMAGES_SENT = 1000;
 
 let database = buildImagesAndDescriptions();
 
+const jsonParser = bodyParser.json();
+
 app.use(cors()); // Allow cors for any webapp
 
 app.use('/webapp', express.static('./front/dist')); // Serve webapp
 app.use('/assets/', express.static('./front/dist/assets')); // Redirect webapp requests
 app.use('/', express.static(path)); // Serve all files
+
+// POST route to handle rating
+app.post('/rate', jsonParser, (req, res) => {
+  const { id, rate, starred } = req.body;
+
+  if (typeof id !== 'string' || typeof rate !== 'number' || typeof starred !== 'boolean') {
+    return res.status(400).json({ error: 'Invalid input data' });
+  }
+
+  // Find the object with the given id
+  let item = database.find(img => img.id === id);
+
+  if (item) {
+    // Update the rating if item exists
+    item.rating = rate;
+    item.starred = starred;
+
+    // Save the updated database to the JSON file
+    fs.writeFileSync('database.json', JSON.stringify(database, null, 2), 'utf8');
+
+    res.status(200).json({ success: true, data: item });
+  } else {
+    // Create a new item if it doesn't exist
+    const errMessage = `Error, tried to rate an image that doesn't exist in database. Image id = ${id}`;
+    console.log(errMessage);
+    res.status(404).json({ success: false, error: errMessage });
+  }
+});
 
 // Query for searching images
 app.get('/ai', (req, res) => {
@@ -41,7 +72,7 @@ app.get('/ai', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server is running on port ${PORT}\nWebapp accessible here => http://localhost:3000/webapp/`);
+  console.log(`Server is running on port ${PORT}\nWebapp accessible here => http://localhost:${PORT}/webapp/`);
 });
 
 /**
@@ -55,6 +86,7 @@ function buildImagesAndDescriptions() {
   const jsons = files.filter(e => e.endsWith('.json')); // All json files
   const txts = files.filter(e => e.endsWith('.txt')); // All txt files
   const jpegs = files.filter(e => e.endsWith('.jpeg')); // All image files
+  const localDatabase = JSON.parse(fs.readFileSync('database.json')); // Local image list containing ratings and stars
 
   // Find pairs (iterate over each image and try to find their json, txt or embeded metadata)
   jpegs.forEach(imgPath => {
@@ -68,6 +100,7 @@ function buildImagesAndDescriptions() {
         id,
         imgPath,
         description,
+        starred: localDatabase.find(image => image.id === id)?.starred,
       });
     } else {
       const indexTxt = txts.findIndex(e => e.includes(id + '.txt'));
@@ -79,13 +112,15 @@ function buildImagesAndDescriptions() {
           id,
           imgPath,
           description,
+          starred: localDatabase.find(image => image.id === id)?.starred,
         });
       } else {
-        
+
         // Else
         database.push({
           id,
           imgPath,
+          starred: localDatabase.find(image => image.id === id)?.starred,
         });
       }
     }
