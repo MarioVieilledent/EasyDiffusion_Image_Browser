@@ -207,8 +207,9 @@
         width: calc(100% - 200px);
         height: 100%;
         display: flex;
-        flex-direction: column;
-        align-items: center;
+        flex-wrap: wrap;
+        padding: 12px;
+        gap: 12px;
         overflow-y: auto;
         background-color: #333333;
       }
