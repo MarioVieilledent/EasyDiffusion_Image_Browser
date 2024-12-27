@@ -79,7 +79,7 @@ app.get('/ai', (req, res) => {
   );
 
   // Shuffling images
-  result = shuffle(result);
+  // result = shuffle(result);
 
   // Limit the number of images sent to clients
   result = result.slice(0, MAX_IMAGES_SENT);
@@ -109,6 +109,9 @@ function buildImagesAndDescriptions() {
     const id = imgPath.slice(0, -5);
     const indexJson = jsons.findIndex(e => e.includes(id + '.json'));
 
+    // Get stats of image to use date and time
+    const stats = fs.statSync(imgPath);
+
     // If image has a json metadata
     if (indexJson >= 0) {
       const description = JSON.parse(fs.readFileSync(jsons[indexJson]));
@@ -116,10 +119,12 @@ function buildImagesAndDescriptions() {
         id,
         imgPath,
         description,
+        stats,
         starred: localDatabase.find(image => image.id === id)?.starred,
       });
     } else {
       const indexTxt = txts.findIndex(e => e.includes(id + '.txt'));
+
 
       // Else if image has txt metadata
       if (indexTxt >= 0) {
