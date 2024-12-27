@@ -41,9 +41,25 @@ app.post('/rate', jsonParser, (req, res) => {
   } else {
     // Create a new item if it doesn't exist
     const errMessage = `Error, tried to rate an image that doesn't exist in database. Image id = ${id}`;
-    console.log(errMessage);
+    console.error(errMessage);
     res.status(404).json({ success: false, error: errMessage });
   }
+});
+
+// POST route to handle rating
+app.post('/deleteImage', jsonParser, (req, res) => {
+  const { id } = req.body;
+  const paths = [id + ".jpeg", id + ".json", id + ".txt"];
+  paths.forEach(path => {
+    fs.unlink(path, (err) => {
+      if (err) {
+        console.error(`Failed to delete file at path ${path}:`, err);
+      } else {
+        console.log(`File at path ${path} deleted successfully.`);
+      }
+    });
+  });
+  res.status(200).json({ success: true, data: null });
 });
 
 // Query for searching images
@@ -151,7 +167,6 @@ function getFiles(dir, files = []) {
 function parseTxt(buffer) {
   let desc = {};
   const txt = buffer.toString('utf8');
-  console.log(txt);
   const lines = txt.split('\n');
   lines.forEach(line => {
     // Regex to extract elements from txt
@@ -185,7 +200,6 @@ function parseTxt(buffer) {
       }
     }
   });
-  console.log(desc);
   return desc;
 }
 

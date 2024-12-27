@@ -179,7 +179,8 @@
         height: 30px;
         border: none;
         padding: 3px 6px;
-        width: 350px;
+        width: 800px;
+        max-width: 100%;
       }
     }
 
@@ -208,6 +209,7 @@
         height: 100%;
         display: flex;
         flex-wrap: wrap;
+        align-items: flex-start;
         padding: 12px;
         gap: 12px;
         overflow-y: auto;

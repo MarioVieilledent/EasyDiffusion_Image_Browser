@@ -15,6 +15,11 @@
       ? `http://localhost:3000/rate`
       : `http://${window.location.hostname}:3000/rate`;
 
+  const buildDeleteImageUrl = () =>
+    window.location.hostname === "localhost"
+      ? `http://localhost:3000/deleteImage`
+      : `http://${window.location.hostname}:3000/deleteImage`;
+
   const rate = (data: ImageRate) => {
     fetch(buildRateUrl(), {
       method: "POST",
@@ -33,9 +38,29 @@
         console.error(error);
       });
   };
+
+  const deleteImage = (id: string) => {
+    fetch(buildDeleteImageUrl(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("ok");
+        console.log(data);
+      })
+      .catch((error) => {
+        console.error("Error deleteing image:");
+        console.error(error);
+      });
+  };
 </script>
 
-<div class="image" on:click={() => detailedView = !detailedView }>
+<div class="image-card">
+  <img class="image" on:click={() => (detailedView = !detailedView)} src={buildImgUrl(image.imgPath)} alt={image.id} />
   <div class="row-info">
     {#if image.description}
       <div class="prompt-and-copy">
@@ -77,35 +102,42 @@
         </span>
         <span class="negative-prompt">{image.description.negative_prompt}</span>
       {/if}
-      <div>
+      <div class="image-buttons">
         {#if image.starred}
           <button
+          class="is-starred"
             on:click={() => {
               rate({ id: image.id, rate: 0, starred: false });
             }}>UNSTAR</button
           >
         {:else}
           <button
+          class="is-not-starred"
             on:click={() => {
               rate({ id: image.id, rate: 0, starred: true });
             }}>STAR</button
           >
         {/if}
+        <button
+          on:click={() => {
+            deleteImage(image.id);
+          }}>Delete</button
+        >
       </div>
     {:else}
       <span class="prompt">{image.id}</span>
       <span class="negative-prompt">no metadata</span>
     {/if}
   </div>
-  <img class="image" src={buildImgUrl(image.imgPath)} alt={image.id} />
 </div>
 
 <style lang="scss">
-  .image {
+  .image-card {
     display: flex;
-    cursor: pointer;
     flex-direction: column;
     width: 400px;
+    border-radius: 6px;
+    border: 1px solid #555;
 
     .row-info {
       margin: 6px 0px 3px 0px;
@@ -120,6 +152,11 @@
         .prompt {
           color: #ddd;
           font-size: 14px;
+          white-space: nowrap; /* Prevents text from wrapping to the next line */
+          overflow: hidden; /* Ensures content that overflows is hidden */
+          text-overflow: ellipsis; /* Displays an ellipsis (...) for overflowing text */
+          width: 200px;
+          width: 100%;
         }
 
         .copy-prompt-button {
@@ -162,12 +199,22 @@
         font-size: 12px;
         margin-bottom: 3px;
       }
+
+      .image-buttons {
+.is-not-starred {
+  
+}
+.is-starred {
+  background-color: #fd0;
+  color: black;
+}
+      }
     }
 
     .image {
       width: 100%;
       max-width: 1000px;
+      cursor: pointer;
     }
   }
-
 </style>
