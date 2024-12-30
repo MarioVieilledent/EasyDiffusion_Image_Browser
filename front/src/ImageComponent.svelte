@@ -123,7 +123,7 @@
             deleteImage(image.id);
           }}>Delete</button
         >
-        <span>{image.stats.birthtime}</span>
+        <span>{image.stats?.birthtime ?? "Unknown date"}</span>
       </div>
     {:else}
       <span class="prompt">{image.id}</span>
