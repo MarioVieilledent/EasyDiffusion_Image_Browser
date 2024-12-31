@@ -14,13 +14,15 @@
 
   let modelFilter: string[] = [];
   let starredFilter: boolean = false;
+  let fromDateFilter: string = "";
+  let toDateFilter: string = "";
 
   let debounceTimeout: any;
 
   const buildUrl = (prompt: string) =>
     window.location.hostname === "localhost"
-      ? `http://localhost:3000/ai?q=${encodeURI(prompt)}`
-      : `http://${window.location.hostname}:3000/ai?q=${encodeURI(prompt)}`;
+      ? `http://localhost:3000/images?q=${encodeURI(prompt)}`
+      : `http://${window.location.hostname}:3000/images?q=${encodeURI(prompt)}`;
 
   const debounce = (func: any, delay: number) => {
     clearTimeout(debounceTimeout);
@@ -31,21 +33,36 @@
 
   const handleInputChange = (event: any) => {
     const query = event.target.value;
-    if (query === "") {
-      fetchState = "notStarted";
-    } else {
-      fetchState = "loading";
-      load(query);
-    }
+    fetchState = "loading";
+    load(query);
   };
 
-  function load(query: string): void {
+  function load(query?: string): void {
     fetchState = "loading";
 
-    window.localStorage.setItem(SAVED_QUERY, query);
+    window.localStorage.setItem(SAVED_QUERY, query ?? input);
 
     debounce(() => {
-      fetch(buildUrl(query)).then((res) =>
+      fetch(buildUrl(query ?? input), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          modelFilter,
+          starredFilter,
+          fromDateFilter: fromDateFilter
+            ? new Date(
+                new Date(fromDateFilter).setHours(0, 0, 0, 0),
+              ).toISOString()
+            : undefined,
+          toDateFilter: toDateFilter
+            ? new Date(
+                new Date(toDateFilter).setHours(23, 55, 55, 0),
+              ).toISOString()
+            : undefined,
+        }),
+      }).then((res) =>
         res
           .json()
           .then((data: Image[]) => {
@@ -67,7 +84,7 @@
             fetchState = "error";
             console.warn("Can't fetch from server.");
             console.warn(e);
-          })
+          }),
       );
     }, 300);
   }
@@ -77,6 +94,8 @@
     if (savedQueryLS) {
       input = savedQueryLS;
       load(savedQueryLS);
+    } else {
+      load();
     }
   });
 </script>
@@ -84,9 +103,7 @@
 <div class="container">
   <div class="header">
     <input type="text" bind:value={input} on:keyup={handleInputChange} />
-    <span
-      >{`${images.filter((image) => ((starredFilter && image.starred) || !starredFilter) && image.description?.use_stable_diffusion_model && modelFilter.includes(image.description.use_stable_diffusion_model)).length}/${images.length}`}</span
-    >
+    <span> {images.length}</span>
   </div>
   <div class="content">
     <div class="left-panel">
@@ -95,7 +112,7 @@
         {@const nbOfImageOfThisModel = images.filter(
           (image) =>
             image.description?.use_stable_diffusion_model &&
-            model === image.description.use_stable_diffusion_model
+            model === image.description.use_stable_diffusion_model,
         ).length}
         <button
           on:click={() => {
@@ -104,6 +121,7 @@
             } else {
               modelFilter = [...modelFilter, model];
             }
+            load();
           }}
           class={modelFilter.includes(model) ? "selected" : "unselected"}
         >
@@ -112,23 +130,56 @@
       {/each}
 
       <button
-        on:click={() => (modelFilter = models)}
+        on:click={() => {
+          modelFilter = models;
+          load();
+        }}
         class={modelFilter.length === models.length ? "selected" : "unselected"}
         >All</button
       >
       <button
-        on:click={() => (modelFilter = [])}
+        on:click={() => {
+          modelFilter = [];
+          load();
+        }}
         class={modelFilter.length === 0 ? "selected" : "unselected"}
         >None</button
       >
 
       {#if starredFilter}
-        <button on:click={() => (starredFilter = false)}
-          >Starred and unstarred</button
+        <button
+          on:click={() => {
+            starredFilter = false;
+            load();
+          }}>Starred and unstarred</button
         >
       {:else}
-        <button on:click={() => (starredFilter = true)}>Only Starred</button>
+        <button
+          on:click={() => {
+            starredFilter = true;
+            load();
+          }}>Only Starred</button
+        >
       {/if}
+
+      <div>
+        <label for="fromDateInput">From</label>
+        <input
+          id="fromDateInput"
+          type="date"
+          bind:value={fromDateFilter}
+          on:change={() => load()}
+        />
+      </div>
+      <div>
+        <label for="toDateInput">To</label>
+        <input
+          id="toDateInput"
+          type="date"
+          bind:value={toDateFilter}
+          on:change={() => load()}
+        />
+      </div>
     </div>
     <div class="images">
       {#if fetchState === "ok"}
@@ -136,9 +187,7 @@
           <p>No image matching the query filter.</p>
         {/if}
         {#each images as image}
-          {#if ((starredFilter && image.starred) || !starredFilter) && modelFilter.includes(image.description?.use_stable_diffusion_model)}
-            <ImageComponent {image} />
-          {/if}
+          <ImageComponent {image} />
         {/each}
       {/if}
 

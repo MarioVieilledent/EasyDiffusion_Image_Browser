@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const bodyParser = require('body-parser')
+const bodyParser = require('body-parser');
 const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,9 +14,10 @@ const jsonParser = bodyParser.json();
 
 app.use(cors()); // Allow cors for any webapp
 
-app.use('/webapp', express.static('./front/dist')); // Serve webapp
 app.use('/assets/', express.static('./front/dist/assets')); // Redirect webapp requests
+app.use('/webapp', express.static('./front/dist')); // Serve webapp
 app.use('/', express.static(path)); // Serve all files
+app.use(bodyParser.json());
 
 // POST route to handle rating
 app.post('/rate', jsonParser, (req, res) => {
@@ -63,23 +64,41 @@ app.post('/deleteImage', jsonParser, (req, res) => {
 });
 
 // Query for searching images
-app.get('/ai', (req, res) => {
+app.post('/images', (req, res) => {
+  const {
+    modelFilter,
+    starredFilter,
+    fromDateFilter,
+    toDateFilter,
+  } = req.body;
+
   const queryParam = req.query.q;
-  if (!queryParam) {
-    return res.status(400).json({ error: 'Query parameter "param" is required.' });
-  }
 
   const words = queryParam.trim().toLowerCase().split(' ');
 
   // Filtering database to keep only requested images
   // Find patterns in prompt and in filename (id)
-  let result = database.filter(e =>
-    words.every(word => e.description?.prompt?.trim().toLowerCase().includes(word) ||
-      e.id.trim().replaceAll('_', ' ').replaceAll('\\', ' ').replaceAll('/', ' ').toLowerCase().includes(word))
-  );
-
-  // Shuffling images
-  // result = shuffle(result);
+  let result = database.filter(e => {
+    if (queryParam) {
+      return words.every(word => e.description?.prompt?.trim().toLowerCase().includes(word) ||
+        e.id.trim().replaceAll('_', ' ').replaceAll('\\', ' ').replaceAll('/', ' ').toLowerCase().includes(word))
+    } else {
+      return true;
+    }
+  }).filter(e => { // Filter by date
+    if (fromDateFilter === undefined && toDateFilter === undefined) {
+      return true;
+    } else {
+      if (e.stats?.birthtime) {
+        return fromDateFilter < new Date(e.stats.birthtime).toISOString() && toDateFilter > new Date(e.stats.birthtime).toISOString();
+      } else if (e.stats?.birthtimeMs) {
+        console.log(new Date(e.stats.birthtimeMs).toISOString())
+        return fromDateFilter < new Date(e.stats.birthtimeMs).toISOString() && toDateFilter > new Date(e.stats.birthtimeMs).toISOString();
+      } else {
+        return false;
+      }
+    }
+  });
 
   // Limit the number of images sent to clients
   result = result.slice(0, MAX_IMAGES_SENT);
@@ -111,10 +130,15 @@ function buildImagesAndDescriptions() {
 
     // Get stats of image to use date and time
     const stats = fs.statSync(imgPath);
+    if (!stats) {
+
+      console.log(imgPath)
+    }
 
     // If image has a json metadata
     if (indexJson >= 0) {
       const description = JSON.parse(fs.readFileSync(jsons[indexJson]));
+
       database.push({
         id,
         imgPath,

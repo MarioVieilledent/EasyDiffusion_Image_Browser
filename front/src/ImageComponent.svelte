@@ -60,7 +60,12 @@
 </script>
 
 <div class="image-card">
-  <img class="image" on:click={() => (detailedView = !detailedView)} src={buildImgUrl(image.imgPath)} alt={image.id} />
+  <img
+    class="image"
+    on:click={() => (detailedView = !detailedView)}
+    src={buildImgUrl(image.imgPath)}
+    alt={image.id}
+  />
   <div class="row-info">
     {#if image.description}
       <div class="prompt-and-copy">
@@ -105,14 +110,14 @@
       <div class="image-buttons">
         {#if image.starred}
           <button
-          class="is-starred"
+            class="is-starred"
             on:click={() => {
               rate({ id: image.id, rate: 0, starred: false });
             }}>UNSTAR</button
           >
         {:else}
           <button
-          class="is-not-starred"
+            class="is-not-starred"
             on:click={() => {
               rate({ id: image.id, rate: 0, starred: true });
             }}>STAR</button
@@ -123,7 +128,11 @@
             deleteImage(image.id);
           }}>Delete</button
         >
-        <span>{image.stats?.birthtime ?? "Unknown date"}</span>
+        {#if image.stats?.birthtime}
+          <span>{new Date(image.stats.birthtime).toLocaleString()}</span>
+        {:else if image.stats?.birthtimeMs}
+          <span>{new Date(image.stats.birthtimeMs).toLocaleString()}</span>
+        {/if}
       </div>
     {:else}
       <span class="prompt">{image.id}</span>
@@ -146,19 +155,19 @@
       display: flex;
       flex-direction: column;
 
+      .prompt {
+        color: #ddd;
+        font-size: 14px;
+        white-space: nowrap; /* Prevents text from wrapping to the next line */
+        overflow: hidden; /* Ensures content that overflows is hidden */
+        text-overflow: ellipsis; /* Displays an ellipsis (...) for overflowing text */
+        width: 200px;
+        width: 100%;
+      }
+
       .prompt-and-copy {
         display: flex;
         align-items: center;
-
-        .prompt {
-          color: #ddd;
-          font-size: 14px;
-          white-space: nowrap; /* Prevents text from wrapping to the next line */
-          overflow: hidden; /* Ensures content that overflows is hidden */
-          text-overflow: ellipsis; /* Displays an ellipsis (...) for overflowing text */
-          width: 200px;
-          width: 100%;
-        }
 
         .copy-prompt-button {
           background-color: transparent;
@@ -202,13 +211,12 @@
       }
 
       .image-buttons {
-.is-not-starred {
-  
-}
-.is-starred {
-  background-color: #fd0;
-  color: black;
-}
+        .is-not-starred {
+        }
+        .is-starred {
+          background-color: #fd0;
+          color: black;
+        }
       }
     }
 
