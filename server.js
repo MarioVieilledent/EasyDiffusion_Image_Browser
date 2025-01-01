@@ -63,6 +63,12 @@ app.post('/deleteImage', jsonParser, (req, res) => {
   res.status(200).json({ success: true, data: null });
 });
 
+// GET route to handle reload database
+app.get("/reloadDatabase", (req, res) => {
+  database = buildImagesAndDescriptions();
+  res.status(200).json({ success: true, data: item });
+});
+
 // Query for searching images
 app.post('/images', (req, res) => {
   const {
@@ -90,10 +96,11 @@ app.post('/images', (req, res) => {
       return true;
     } else {
       if (e.stats?.birthtime) {
-        return fromDateFilter < new Date(e.stats.birthtime).toISOString() && toDateFilter > new Date(e.stats.birthtime).toISOString();
+        const imageTimaStamp = new Date(e.stats.birthtime).toISOString();
+        return fromDateFilter ? fromDateFilter < imageTimaStamp : true && toDateFilter ? toDateFilter > imageTimaStamp : true;
       } else if (e.stats?.birthtimeMs) {
-        console.log(new Date(e.stats.birthtimeMs).toISOString())
-        return fromDateFilter < new Date(e.stats.birthtimeMs).toISOString() && toDateFilter > new Date(e.stats.birthtimeMs).toISOString();
+        const imageTimaStamp = new Date(e.stats.birthtimeMs).toISOString();
+        return fromDateFilter ? fromDateFilter < imageTimaStamp : true && toDateFilter ? toDateFilter > imageTimaStamp : true;
       } else {
         return false;
       }

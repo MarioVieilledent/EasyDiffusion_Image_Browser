@@ -19,6 +19,11 @@
 
   let debounceTimeout: any;
 
+  const buildReloadDatabaseUrl = () =>
+    window.location.hostname === "localhost"
+      ? `http://localhost:3000/reloadDatabase`
+      : `http://${window.location.hostname}:3000/reloadDatabase`;
+
   const buildUrl = (prompt: string) =>
     window.location.hostname === "localhost"
       ? `http://localhost:3000/images?q=${encodeURI(prompt)}`
@@ -107,6 +112,14 @@
   </div>
   <div class="content">
     <div class="left-panel">
+      <button
+        on:click={() => {
+          fetch(buildReloadDatabaseUrl()).then(() => {
+            console.log("reloaded");
+            load();
+          });
+        }}>Reload all images</button
+      >
       <span>Filter models</span>
       {#each models as model}
         {@const nbOfImageOfThisModel = images.filter(

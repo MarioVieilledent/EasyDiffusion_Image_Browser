@@ -59,17 +59,19 @@
   };
 </script>
 
-<div class="image-card">
+<div class={detailedView ? "image-card-full" : "image-card"}>
   <img
-    class="image"
+    class={detailedView ? "full-image" : "image"}
     on:click={() => (detailedView = !detailedView)}
     src={buildImgUrl(image.imgPath)}
     alt={image.id}
   />
-  <div class="row-info">
+  <div class={detailedView ? "row-info-full" : "row-info"}>
     {#if image.description}
       <div class="prompt-and-copy">
-        <span class="prompt">{image.description.prompt}</span>
+        <span class={detailedView ? "full-prompt" : "prompt"}
+          >{image.description.prompt}</span
+        >
         <button
           class="copy-prompt-button"
           title="copy prompt"
@@ -142,88 +144,113 @@
 </div>
 
 <style lang="scss">
+  .image-card-full {
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+    border-radius: 6px;
+    border: 1px solid #555;
+  }
+
   .image-card {
     display: flex;
     flex-direction: column;
     width: 400px;
     border-radius: 6px;
     border: 1px solid #555;
+  }
 
-    .row-info {
-      margin: 6px 0px 3px 0px;
-      padding: 0px 6px;
-      display: flex;
-      flex-direction: column;
+  .row-info-full {
+    margin: 6px 0px 3px 0px;
+    padding: 0px 6px;
+    display: flex;
+    flex-direction: column;
+    max-width: 1024px;
+  }
 
-      .prompt {
-        color: #ddd;
-        font-size: 14px;
-        white-space: nowrap; /* Prevents text from wrapping to the next line */
-        overflow: hidden; /* Ensures content that overflows is hidden */
-        text-overflow: ellipsis; /* Displays an ellipsis (...) for overflowing text */
-        width: 200px;
-        width: 100%;
-      }
+  .row-info {
+    margin: 6px 0px 3px 0px;
+    padding: 0px 6px;
+    display: flex;
+    flex-direction: column;
+  }
 
-      .prompt-and-copy {
-        display: flex;
-        align-items: center;
+  .prompt {
+    color: #ddd;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+  }
 
-        .copy-prompt-button {
-          background-color: transparent;
-          margin: 0px 0px 0px 6px;
-          padding: 0;
-          border: none;
-          border-radius: 0px;
+  .full-prompt {
+    color: #ddd;
+    font-size: 14px;
+  }
 
-          svg {
-            height: 18px;
-          }
-        }
+  .prompt-and-copy {
+    display: flex;
+    align-items: center;
 
-        .copy-prompt-button:focus {
-          outline: 0;
-        }
+    .copy-prompt-button {
+      background-color: transparent;
+      margin: 0px 0px 0px 6px;
+      padding: 0;
+      border: none;
+      border-radius: 0px;
 
-        .copy-prompt:hover {
-          cursor: pointer;
-        }
-      }
-
-      .details {
-        color: #aaa;
-        font-size: 12px;
-        margin-bottom: 3px;
-
-        .details-title {
-          font-weight: 800;
-        }
-
-        .details-value {
-          margin-right: 6px;
-        }
-      }
-
-      .negative-prompt {
-        color: #888;
-        font-size: 12px;
-        margin-bottom: 3px;
-      }
-
-      .image-buttons {
-        .is-not-starred {
-        }
-        .is-starred {
-          background-color: #fd0;
-          color: black;
-        }
+      svg {
+        height: 18px;
       }
     }
 
-    .image {
-      width: 100%;
-      max-width: 1000px;
+    .copy-prompt-button:focus {
+      outline: 0;
+    }
+
+    .copy-prompt:hover {
       cursor: pointer;
     }
+  }
+
+  .details {
+    color: #aaa;
+    font-size: 12px;
+    margin-bottom: 3px;
+
+    .details-title {
+      font-weight: 800;
+    }
+
+    .details-value {
+      margin-right: 6px;
+    }
+  }
+
+  .negative-prompt {
+    color: #888;
+    font-size: 12px;
+    margin-bottom: 3px;
+  }
+
+  .image-buttons {
+    .is-not-starred {
+    }
+    .is-starred {
+      background-color: #fd0;
+      color: black;
+    }
+  }
+
+  .image {
+    width: 100%;
+    max-width: 1000px;
+    cursor: pointer;
+  }
+
+  .full-image {
+    width: fit-content;
+    cursor: pointer;
   }
 </style>
